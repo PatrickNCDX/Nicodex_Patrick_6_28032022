@@ -1,12 +1,13 @@
-require('dotenv').config();
 const express = require('express');
+const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
-const sauceRoutes = require('./routes/sauce')
-const userRoutes = require('./routes/user');
 const path = require('path');
-const app = express();
+require('dotenv').config({ path: process.cwd() + '/.env' });
 
+const sauceRoutes = require('./routes/sauce');
+const userRoutes = require('./routes/user');
 
+// Connexion à la base de données avec mongoose
 mongoose.connect('mongodb+srv://NCDX:Cafefeu17@cluster0.leaay.mongodb.net/myFirstDatabase?retryWrites=true&w=majority',
     {
         useNewUrlParser: true,
@@ -15,8 +16,9 @@ mongoose.connect('mongodb+srv://NCDX:Cafefeu17@cluster0.leaay.mongodb.net/myFirs
     .then(() => console.log('Connexion à MongoDB réussie !'))
     .catch(() => console.log('Connexion à MongoDB échouée !'));
 
-app.use(express.json());
+const app = express();
 
+// Définition de headers pour éviters les erreurs de CORS
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content, Accept, Content-Type, Authorization');
@@ -24,7 +26,9 @@ app.use((req, res, next) => {
     next();
 });
 
+app.use(bodyParser.json());
 
+// Enregistrement des routeurs
 app.use('/images', express.static(path.join(__dirname, 'images')));
 app.use('/api/sauces', sauceRoutes);
 app.use('/api/auth', userRoutes);
