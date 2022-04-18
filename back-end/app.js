@@ -10,8 +10,7 @@ const sauceRoutes = require('./routes/sauce')
 const userRoutes = require('./routes/user');
 
 
-mongoose.connect('mongodb+srv://NCDX:Cafefeu17@cluster0.leaay.mongodb.net/myFirstDatabase?retryWrites=true&w=majority',
-    //mongoose.connect(process.env.MONGO_DB,
+mongoose.connect(process.env.MONGO_DB,
     {
         useNewUrlParser: true,
         useUnifiedTopology: true
@@ -34,5 +33,9 @@ app.use(bodyParser.json());
 app.use('/images', express.static(path.join(__dirname, 'images')));
 app.use('/api/sauces', sauceRoutes);
 app.use('/api/auth', userRoutes);
+
+app.use(function (err, req, res, next) {
+    return res.status(500).send('Something broke!');
+});
 
 module.exports = app;

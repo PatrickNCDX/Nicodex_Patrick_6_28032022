@@ -34,47 +34,53 @@ exports.createSauce = (req, res, next) => {
 };
 
 // Modification d'une sauce (Update)
-exports.modifySauce = (req, res, next) => {
+exports.modifySauce = async (req, res, next) => {
+    const sauce = await Sauce.findOne({ _id: req.params.id });
+    if (sauce == null) {
+        return res.status(500).json(); // TODO : mettre un message (la sauce n'existe pas)
+    }
+
+    if (sauce.userId != req.userId) {
+        return res.status(401).json(); // TODO : mettre un message (l'user n'a pas le droit)
+    }
+
+    let sauceObject = {};
     if (req.file) {
         // Si il existe déjà une image
-        Sauce.findOne({ _id: req.params.id })
-            .then(sauce => {
-                const filename = sauce.imageUrl.split('/images/')[1];
-                fs.unlink(`images/${filename}`, () => {
-                    const sauceObject = {
-                        ...JSON.parse(req.body.sauce),
-                        imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
-                    }
-                    // Si il n'existe pas d'image
-                    Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id })
-                        .then(() => res.status(200).json({ message: 'Sauce modifiée!' }))
-                        .catch(error => res.status(400).json({ error }));
-                })
-            })
-            .catch(error => res.status(500).json({ error }));
-    } else {
+        const filename = sauce.imageUrl.split('/images/')[1];
+        fs.unlinkSync(`images/${filename}`);
 
-        const sauceObject = { ...req.body };
-        Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id })
-            .then(() => res.status(200).json({ message: 'Sauce modifiée!' }))
-            .catch(error => res.status(400).json({ error }));
+        sauceObject = {
+            ...JSON.parse(req.body.sauce),
+            imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
+        }
     }
+    else {
+        sauceObject = { ...req.body };
+    }
+
+    await Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id });
+    return res.status(200).json({ message: 'Sauce modifiée!' });
 };
 
 // Suppression d'une sauce (Delete)
-exports.deleteSauce = (req, res, next) => {
-    Sauce.findOne({ _id: req.params.id })
-        .then(sauce => {
-            // Récupération du nom du fichier
-            const filename = sauce.imageUrl.split('/images/')[1];
-            // On efface le fichier (unlink)
-            fs.unlink(`images/${filename}`, () => {
-                Sauce.deleteOne({ _id: req.params.id })
-                    .then(() => res.status(200).json({ message: 'Objet supprimé !' }))
-                    .catch(error => res.status(400).json({ error }));
-            });
-        })
-        .catch(error => res.status(500).json({ error }));
+exports.deleteSauce = async (req, res, next) => {
+    const sauce = await Sauce.findOne({ _id: req.params.id });
+    if (sauce == null) {
+        return res.status(500).json(); // TODO : mettre un message (la sauce n'existe pas)
+    }
+
+    if (sauce.userId != req.userId) {
+        return res.status(401).json(); // TODO : mettre un message (l'user n'a pas le droit)
+    }
+
+    // Récupération du nom du fichier
+    const filename = sauce.imageUrl.split('/images/')[1];
+    // On efface le fichier (unlink)
+    fs.unlinkSync(`images/${filename}`);
+
+    await Sauce.deleteOne({ _id: req.params.id });
+    return res.status(200).json({ message: 'Sauce supprimé!' });
 };
 
 // Création like ou dislike (Post/:id/like)

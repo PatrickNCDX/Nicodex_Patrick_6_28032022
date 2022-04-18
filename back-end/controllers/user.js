@@ -50,7 +50,7 @@ exports.login = (req, res, next) => {
                         // Création d'un token pour sécuriser le compte de l'utilisateur
                         token: tokenJson.sign(
                             { userId: user._id },
-                            'RANDOM_TOKEN_SECRET',
+                            process.env.RANDOM_TOKEN_SECRET,
                             { expiresIn: '24h' }
                         )
                     });
